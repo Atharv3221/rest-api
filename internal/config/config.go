@@ -9,14 +9,14 @@ import (
 )
 
 type HTTPServer struct {
-	Addr string
+	Addr string `yaml:"address" env-required:"true"`
 }
 
 // env-default:"production" -> should be used in production
 type Config struct { // struct tags
 	Env         string `yaml:"env" env:"ENV" env-required:"true"`
 	Storagepath string `yaml:"storage_path" env-required:"true"`
-	HTTPServer
+	HTTPServer  `yaml:"http_server"`
 }
 
 // should not return error, must directly end the program if error occurs
