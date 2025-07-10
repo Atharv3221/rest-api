@@ -1,2 +1,2 @@
 # rest-api
-REST API to perform CRUP operations in Go
+REST API to perform CRUD operations in Go
