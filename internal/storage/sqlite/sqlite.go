@@ -3,6 +3,7 @@ package sqlite
 import (
 	"database/sql"
 	"fmt"
+	"log/slog"
 
 	"github.com/atharv3221/rest-api/internal/config"
 	"github.com/atharv3221/rest-api/internal/types"
@@ -100,4 +101,22 @@ func (s *SqLite) GetStudents() ([]types.Student, error) {
 		students = append(students, student)
 	}
 	return students, nil
+}
+
+func (s *SqLite) DeleteById(id int64) error {
+	stmt, err := s.Db.Prepare("DELETE FROM students WHERE id = ?")
+	if err != nil {
+		slog.Error("Internal Error Querey preparation")
+		return err
+	}
+
+	_, err = stmt.Exec(id)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			slog.Error("student not found with id", slog.Int64("id", id))
+		}
+		return err
+	}
+	return nil
 }
