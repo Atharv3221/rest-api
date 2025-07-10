@@ -110,6 +110,7 @@ func (s *SqLite) DeleteById(id int64) error {
 		return err
 	}
 
+	defer stmt.Close()
 	_, err = stmt.Exec(id)
 
 	if err != nil {
@@ -117,6 +118,22 @@ func (s *SqLite) DeleteById(id int64) error {
 			slog.Error("student not found with id", slog.Int64("id", id))
 		}
 		return err
+	}
+	return nil
+}
+
+func (s *SqLite) UpdateStudent(name string, email string, age int, id int64) error {
+	stmt, err := s.Db.Prepare("UPDATE students SET name = ?, email = ?, age = ? WHERE id = ?")
+	if err != nil {
+		slog.Error("Internal server error query")
+		return err
+	}
+
+	defer stmt.Close()
+
+	_, err = stmt.Exec(name, email, age, id)
+	if err != nil {
+		slog.Error("Internal error", slog.String("Error", err.Error()))
 	}
 	return nil
 }

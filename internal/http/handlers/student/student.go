@@ -109,3 +109,43 @@ func DeleteById(storage storage.Storage) http.HandlerFunc {
 		response.WriteJson(w, http.StatusOK, "user deleted")
 	}
 }
+
+func Update(storage storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var student types.Student
+
+		err := json.NewDecoder(r.Body).Decode(&student)
+		if errors.Is(err, io.EOF) {
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("empty body")))
+			slog.Error("Body is empty", slog.Int("status", http.StatusBadRequest))
+			return
+		}
+		if err != nil {
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
+			return
+		}
+		slog.Info("Updating student")
+		if student.Id == 0 {
+			slog.Error("Invalid id is provided")
+			response.WriteJson(w, http.StatusBadRequest, "id is missing")
+		}
+
+		if err := validator.New().Struct(student); err != nil {
+			validateErrs := err.(validator.ValidationErrors)
+			response.WriteJson(w, http.StatusBadRequest, response.ValidationError(validateErrs))
+			slog.Error("Field is missing", slog.Int("status", http.StatusBadRequest))
+			return
+		}
+
+		err = storage.UpdateStudent(student.Name, student.Email, student.Age, student.Id)
+
+		if err != nil {
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
+			return
+		}
+
+		slog.Info("Student updated successfully", slog.Int64("id", student.Id))
+
+		response.WriteJson(w, http.StatusOK, "user udated")
+	}
+}
