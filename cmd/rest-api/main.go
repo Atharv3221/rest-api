@@ -19,14 +19,19 @@ func main() {
 	// load config
 	cfg := config.MustLoad()
 	// database setup
+
 	storage, err := sqlite.New(cfg)
 	if err != nil {
-		log.Fatal(err)
+
+		log.Fatal("storage initialization failed", err.Error())
 	}
-	slog.Info("storage initialized", slog.String("env", cfg.Env))
 
 	// setup router
+	slog.Info("Setting up routes")
+
 	router := http.NewServeMux()
+
+	router.Handle("GET /api/students/health", student.HealthCheck())
 
 	router.HandleFunc("POST /api/students", student.New(storage))
 
@@ -37,14 +42,16 @@ func main() {
 	router.HandleFunc("DELETE /api/students/{id}", student.DeleteById(storage))
 
 	router.HandleFunc("PUT /api/students", student.Update(storage))
+
+	slog.Info("Routes setup completed")
 	// setup server
+
+	slog.Info("Starting server")
 
 	server := http.Server{
 		Addr:    cfg.Addr,
 		Handler: router,
 	}
-
-	slog.Info("sever started", slog.String("address", cfg.Addr))
 
 	done := make(chan os.Signal, 1)
 
@@ -53,9 +60,11 @@ func main() {
 	go func() {
 		err := server.ListenAndServe()
 		if err != nil {
-			log.Fatal("Failed to start server")
+			log.Fatal("server startup failed")
 		}
 	}()
+
+	slog.Info("Sever started successfully at ", slog.String("address", cfg.Addr))
 
 	<-done
 
@@ -69,6 +78,6 @@ func main() {
 		slog.Error("Failed to shutdown server", slog.String("error", err.Error()))
 	}
 
-	slog.Info("server shutdown successfully")
+	slog.Info("Server shutdown successfully")
 
 }

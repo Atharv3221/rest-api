@@ -15,10 +15,14 @@ type SqLite struct {
 }
 
 func New(cfg *config.Config) (*SqLite, error) {
+	slog.Info("Starting storage initialization")
 	db, err := sql.Open("sqlite", cfg.Storagepath)
 	if err != nil {
+		slog.Error("while opening database")
 		return nil, err
 	}
+
+	slog.Info("Storage initialized sucessfully", slog.String("env", cfg.Env))
 
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS students(
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,8 +31,11 @@ func New(cfg *config.Config) (*SqLite, error) {
 	age INTEGER)`)
 
 	if err != nil {
+		slog.Error("query error")
 		return nil, err
 	}
+
+	slog.Info("Successfully created table students")
 
 	return &SqLite{
 		Db: db,

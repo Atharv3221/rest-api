@@ -15,6 +15,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// adding new student
 func New(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -52,52 +53,58 @@ func New(storage storage.Storage) http.HandlerFunc {
 			response.WriteJson(w, http.StatusInternalServerError, err)
 			return
 		}
-		slog.Info("User created successfully", slog.String("userId", fmt.Sprint(lastId)))
+		slog.Info("Student created successfully", slog.String("userId", fmt.Sprint(lastId)))
 		response.WriteJson(w, http.StatusCreated, map[string]int64{"id": lastId})
-		w.Write([]byte("Welcome to students api"))
+		w.Write([]byte("Student added successfully"))
 	}
 }
 
+// get a student by id
 func GetById(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
-		slog.Info("getting a student", slog.String("id", id))
+		slog.Info("Getting a student", slog.String("id", id))
 		intId, err := strconv.ParseInt(id, 10, 64)
 		if err != nil {
-			slog.Error("id data is not number")
+			slog.Error("id data is not a number")
 			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
 			return
 		}
 		student, err := storage.GetStudentById(intId)
 
 		if err != nil {
-			slog.Error("error getting user", slog.String("id", id))
+			slog.Error("not found student", slog.String("id", id))
 			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
 		}
 
+		slog.Info("Student got successfully with", slog.Int64("id", intId))
 		response.WriteJson(w, http.StatusOK, student)
 	}
 }
 
+// get all students
 func GetList(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		slog.Info("getting all students")
+		slog.Info("Getting all students from Database")
 
 		students, err := storage.GetStudents()
 		if err != nil {
+			slog.Error("Internal serval error")
 			response.WriteJson(w, http.StatusInternalServerError, err)
 		}
+		slog.Info("Got students succesfully from database")
 		response.WriteJson(w, http.StatusOK, students)
 	}
 }
 
+// delete by id
 func DeleteById(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		slog.Info("Deleting a student", slog.String("id", id))
 		intId, err := strconv.ParseInt(id, 10, 64)
 		if err != nil {
-			slog.Error("id data is not number")
+			slog.Error("invalid id", slog.String("id", id))
 			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
 			return
 		}
@@ -110,6 +117,7 @@ func DeleteById(storage storage.Storage) http.HandlerFunc {
 	}
 }
 
+// update the student
 func Update(storage storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var student types.Student
@@ -124,16 +132,17 @@ func Update(storage storage.Storage) http.HandlerFunc {
 			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
 			return
 		}
-		slog.Info("Updating student")
+		slog.Info("Updating the student with", slog.Int64("id", student.Id))
+
 		if student.Id == 0 {
-			slog.Error("Invalid id is provided")
-			response.WriteJson(w, http.StatusBadRequest, "id is missing")
+			slog.Error("invalid id provided", slog.Int64("id", student.Id))
+			response.WriteJson(w, http.StatusBadRequest, "id should be non zero")
 		}
 
 		if err := validator.New().Struct(student); err != nil {
 			validateErrs := err.(validator.ValidationErrors)
 			response.WriteJson(w, http.StatusBadRequest, response.ValidationError(validateErrs))
-			slog.Error("Field is missing", slog.Int("status", http.StatusBadRequest))
+			slog.Error("field is missing", slog.String("Field", response.ValidationError(validateErrs).Error))
 			return
 		}
 
@@ -145,7 +154,15 @@ func Update(storage storage.Storage) http.HandlerFunc {
 		}
 
 		slog.Info("Student updated successfully", slog.Int64("id", student.Id))
+		response.WriteJson(w, http.StatusOK, "Student udated successfully")
+	}
+}
 
-		response.WriteJson(w, http.StatusOK, "user udated")
+// Health check
+func HealthCheck() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		slog.Info("Request for health check received")
+		response.WriteJson(w, http.StatusOK, "Api is working")
+		slog.Info("Health check successful", slog.Int64("status", http.StatusOK))
 	}
 }
