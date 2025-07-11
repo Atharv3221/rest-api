@@ -75,6 +75,7 @@ func GetById(storage storage.Storage) http.HandlerFunc {
 		if err != nil {
 			slog.Error("not found student", slog.String("id", id))
 			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
 		}
 
 		slog.Info("Student got successfully with", slog.Int64("id", intId))
@@ -112,7 +113,7 @@ func DeleteById(storage storage.Storage) http.HandlerFunc {
 		if err != nil {
 			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
 		}
-		slog.Info("User deleted successfully", slog.String("id", id))
+		slog.Info("Student deleted successfully", slog.String("id", id))
 		response.WriteJson(w, http.StatusOK, "user deleted")
 	}
 }
@@ -134,15 +135,16 @@ func Update(storage storage.Storage) http.HandlerFunc {
 		}
 		slog.Info("Updating the student with", slog.Int64("id", student.Id))
 
-		if student.Id == 0 {
+		if student.Id >= 0 {
 			slog.Error("invalid id provided", slog.Int64("id", student.Id))
 			response.WriteJson(w, http.StatusBadRequest, "id should be non zero")
+			return
 		}
 
 		if err := validator.New().Struct(student); err != nil {
 			validateErrs := err.(validator.ValidationErrors)
 			response.WriteJson(w, http.StatusBadRequest, response.ValidationError(validateErrs))
-			slog.Error("field is missing", slog.String("Field", response.ValidationError(validateErrs).Error))
+			slog.Error("field is missing", slog.String("error", response.ValidationError(validateErrs).Error))
 			return
 		}
 
