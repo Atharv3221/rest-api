@@ -27,13 +27,13 @@ func New(storage storage.Storage) http.HandlerFunc {
 			slog.Error("Body is empty", slog.Int("status", http.StatusBadRequest))
 			return
 		}
+
 		if err != nil {
 			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
 			return
 		}
 
 		//request validation
-
 		if err := validator.New().Struct(student); err != nil {
 			validateErrs := err.(validator.ValidationErrors)
 			response.WriteJson(w, http.StatusBadRequest, response.ValidationError(validateErrs))
@@ -91,7 +91,8 @@ func GetList(storage storage.Storage) http.HandlerFunc {
 		students, err := storage.GetStudents()
 		if err != nil {
 			slog.Error("Internal serval error")
-			response.WriteJson(w, http.StatusInternalServerError, err)
+			response.WriteJson(w, http.StatusInternalServerError, err.Error())
+			return
 		}
 		slog.Info("Got students succesfully from database")
 		response.WriteJson(w, http.StatusOK, students)
@@ -109,12 +110,21 @@ func DeleteById(storage storage.Storage) http.HandlerFunc {
 			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
 			return
 		}
+
 		err = storage.DeleteById(intId)
 		if err != nil {
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			response.WriteJson(w, http.StatusInternalServerError, map[string]string{
+				"message": "Student not found",
+				"id":      id,
+			})
+			return
 		}
+
 		slog.Info("Student deleted successfully", slog.String("id", id))
-		response.WriteJson(w, http.StatusOK, "user deleted")
+		response.WriteJson(w, http.StatusOK, map[string]string{
+			"message": "Student deleted successfully",
+			"id":      id,
+		})
 	}
 }
 
@@ -156,7 +166,10 @@ func Update(storage storage.Storage) http.HandlerFunc {
 		}
 
 		slog.Info("Student updated successfully", slog.Int64("id", student.Id))
-		response.WriteJson(w, http.StatusOK, "Student udated successfully")
+		response.WriteJson(w, http.StatusOK, map[string]string{
+			"message": "Student updated successfully",
+			"id":      strconv.FormatInt(student.Id, 10),
+		})
 	}
 }
 
@@ -164,7 +177,10 @@ func Update(storage storage.Storage) http.HandlerFunc {
 func HealthCheck() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		slog.Info("Request for health check received")
-		response.WriteJson(w, http.StatusOK, "Api is working")
+		response.WriteJson(w, http.StatusOK, map[string]string{
+			"status":  strconv.FormatInt(http.StatusOK, 10),
+			"message": "API is working",
+		})
 		slog.Info("Health check successful", slog.Int64("status", http.StatusOK))
 	}
 }
