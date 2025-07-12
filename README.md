@@ -8,7 +8,6 @@ This is a simple and clean RESTful API written in Go for managing student record
 - ✅ Create, Read, Update, Delete (CRUD) operations on students
 - ✅ SQLite database integration
 - ✅ Graceful server shutdown and structured logging
-- ✅ Minimal dependencies, built using Go standard library
 
 ## Getting Started
 
